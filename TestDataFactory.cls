@@ -58,14 +58,14 @@ public class TestDataFactory {
     }
     public static List<Student__c> insertClassData(Integer count,Integer size){
         List<Class__c> classList = new List<Class__c>();
-        List<Student__c> studentList=new List<Student__c>();
-        List<Student__c> studentsToInsert=new List<Student__c>();
-        for(Integer i=0;i<Count;i++){
-           Class__c c=new Class__C(Name='Class '+i,maxsize__c=size);
+        List<Student__c> studentList = new List<Student__c>();
+        List<Student__c> studentsToInsert = new List<Student__c>();
+        for(Integer i=0; i<count; i++){
+           Class__c c= new Class__C(Name='Class '+i,maxsize__c=size);
            classList.add(c);
         }
         insert classList;
-        for(Integer i=0;i<count;i++){
+        for(Integer i=0; i<count; i++){
             studentList.add(new Student__c(FirstName__c='Student '+i,lastName__c='Student '+i,Sex__c='Female',class__c=classList[i].id));
         }
         insert studentList;
@@ -98,16 +98,18 @@ public class TestDataFactory {
         
         return classList;
     }
-    public static List<Student__c> insertStudentInClass(Integer count){
+    public static List<Student__c> insertStudentInClass(Integer studentCount, Integer classCount){
         List<class__c> classList=new List<class__c>();
         List<Student__c> studentList=new List<Student__c>();
-        for(Integer i=0;i<count;i++){
-            Class__c c=new Class__C(Name='Class '+i,maxsize__c=2);
+        for(Integer i=0; i<classCount; i++){
+            Class__c c=new Class__C(Name='Class '+i,maxsize__c=5);
            	classList.add(c);
         }
         insert classList;
-        for(Integer i=0;i<count;i++){
-            studentList.add(new Student__c(FirstName__c='Student '+i,lastName__c='Student '+i,Sex__c='Female',class__c=classList[i].id));
+        for(Integer i=0; i<classCount; i++) {
+            for(Integer j=0; j<studentCount; j++){
+                studentList.add(new Student__c(FirstName__c='Student '+j,lastName__c='Student '+j,Sex__c='Female',class__c=classList[i].id));
+            }
         }
         return studentList;
     }

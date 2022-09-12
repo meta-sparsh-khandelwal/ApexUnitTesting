@@ -1,54 +1,77 @@
-@isTest
-public with sharing class StudentTriggerTest {
-    @isTest 
-    public static void testOnAfterInsertOne(){
-        List<Student__c> students=TestDataFactory.insertStudentInClass(100);
+@isTest(SeeAllData=false)
+public class StudentTriggerTest {
+    @isTest
+    public static void testBulkOnBeforeInsertWhenStudentsCountIsMoreThanSizeOfClass(){
+        List<Student__c> studentList = TestDataFactory.insertClassData(10, 1);
         Test.startTest();
-        	insert students;
+        	DataBase.SaveResult[] results = Database.insert(studentList,false);
         Test.stopTest();
-        class__c cls=[SELECT Id,mycount__c FROM class__c WHERE id = :students[0].class__c LIMIT 1 ];
-        System.assertEquals(1, cls.MyCount__c);
-        system.debug(cls);
-      
+        for(Database.SaveResult dr : results) {
+            System.assert(!dr.isSuccess());
+            System.assert(dr.getErrors().size() > 0);
+            System.assertEquals('Cannot insert student as Class is full',dr.getErrors()[0].getMessage());
+        }
     }
-    @isTest 
-    public static void testBulkOnAfterInsert(){
-        List<Student__c> students=TestDataFactory.insertStudentInClass(100);
+    @isTest
+    public static void testOnBeforeInsertWhenStudentsCountIsLessThanSizeOfClass(){
+        List<Student__c> studentList=TestDataFactory.insertClassData(5,10);
         Test.startTest();
-        	insert students;
+        	DataBase.SaveResult[] results= Database.insert(studentList,false);
         Test.stopTest();
-        List<Id> classIds=new List<Id>();
-        for(Student__c s:students){
-            classIds.add(s.class__c);
+        for(Database.SaveResult dr : results) {
+            System.assert(dr.isSuccess());
         }
-        List<class__c> cls=[SELECT Id,mycount__c FROM class__c WHERE id = :classIds ];
-        for(class__c c:cls){
-        	System.assertEquals(1, c.MyCount__c);
-        }
-      
     }
 
     @isTest 
-    public static void testOnAfterInsertNegative(){
-        List<Student__c> students=TestDataFactory.insertStudentInClass(100);
-        insert students;
-        List<class__c> classes=[Select id FROM Class__c];
+    public static void testOnAfterInsertGivesCorrectStudentCount(){
+        List<Student__c> studentList=TestDataFactory.insertStudentInClass(5,10);
         Test.startTest();
-        List<Student__c> newStu=new List<Student__c>();
-        for(Integer i=0;i<100;i++){
-            newStu.add(new Student__c(Name='Student '+i,lastName__c='Student '+i,Sex__c='Female',class__c=classes[i].id));
-        }
-        insert newStu;
+        	Database.SaveResult[] results = Database.insert(studentList,false);
         Test.stopTest();
-        
-        List<Id> classIds=new List<Id>();
-        for(Student__c s:students){
-            classIds.add(s.class__c);
+        List<Class__c> classList = [SELECT Name, MyCount__c FROM Class__c];
+        for(Database.SaveResult dr : results) {
+            System.assert(dr.isSuccess());
         }
-        List<class__c> cls=[SELECT Id,mycount__c FROM class__c WHERE id = :classIds ];
-        for(class__c c:cls){
-        	System.assertNotEquals(1, c.MyCount__c);
+        for(Class__c cl : classList) {
+            System.assertEquals(5, cl.MyCount__c);
         }
     }
-
+    @isTest 
+    public static void testOnAfterUpdateGivesCorrectStudentCount(){
+        Class__c oldClass = new Class__c(Name='OldClassTest', maxSize__c=5);
+        insert oldClass;
+        List<Student__c> studentList = new List<Student__c>();
+        for(Integer i=0; i<4; i++) {
+            studentList.add(new Student__c(FirstName__c='StudentFN'+i,lastName__c='StudentLN'+i,Sex__c='Male',Class__c=oldClass.Id));
+        }
+        insert studentList;
+        Class__c newClass = new Class__c(Name='NewClassTest', maxSize__c=5);
+        insert newClass;
+        for(Student__c st : studentList) {
+            st.Class__c = newClass.Id;
+        }
+        Test.startTest();
+            update studentList;
+        Test.stopTest();
+        Class__c oldClassQueried = [SELECT Name, MyCount__c FROM Class__c WHERE Name = 'OldClassTest'];
+        Class__c newClassQueried = [SELECT Name, MyCount__c FROM Class__c WHERE Name = 'NewClassTest'];
+        System.assertEquals(0, oldClassQueried.MyCount__c);
+        System.assertEquals(4, newClassQueried.MyCount__c);
+    }
+    @isTest 
+    public static void testOnAfterDeleteGivesCorrectStudentCount(){
+        Class__c oldClass = new Class__c(Name='OldClassTest', maxSize__c=5);
+        insert oldClass;
+        List<Student__c> studentList = new List<Student__c>();
+        for(Integer i=0; i<4; i++) {
+            studentList.add(new Student__c(FirstName__c='StudentFN'+i,lastName__c='StudentLN'+i,Sex__c='Male',Class__c=oldClass.Id));
+        }
+        insert studentList;
+        Test.startTest();
+            delete studentList;
+        Test.stopTest();
+        Class__c oldClassQueried = [SELECT Name, MyCount__c FROM Class__c WHERE Name = 'OldClassTest'];
+        System.assertEquals(0, oldClassQueried.MyCount__c);
+    }
 }

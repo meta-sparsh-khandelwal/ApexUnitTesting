@@ -1,50 +1,47 @@
-public with sharing class OpportunityTriggerTest {
+@isTest(SeeAllData=false)
+public class OpportunityTriggerTest {
     @isTest
-    public static void testOnBeforeUpdateOne(){
-        List<Opportunity> opp=TestDataFactory.insertOpportunity(100);
+    public static void testOnBeforeUpdateOneOpportunityStageBecomesClosedWonThenCloseDateToday(){
+        List<Opportunity> opp = TestDataFactory.insertOpportunity(1);
         opp[0].stageName='Closed Won';
         Test.startTest();
         	update opp[0];
         Test.stopTest();
-        Opportunity op=[SELECT Id,CloseDate from Opportunity where Id=:opp[0].Id LIMIT 1];
-        System.assertEquals(Date.today(), op.closeDate);
+        Opportunity opportunityQueried = [SELECT Id,CloseDate from Opportunity where Id=:opp[0].Id LIMIT 1];
+        System.assertEquals(Date.today(), opportunityQueried.closeDate);
         
     }
         @isTest
-    public static void testBulkOnBeforeUpdate(){
-        List<Opportunity> opp=TestDataFactory.insertOpportunity(100);
-        List<Id> oppId=new List<Id>();
-        for(Integer i=0;i<100;i++){
-        	opp[i].stageName='Closed Won';
-            oppId.add(opp[i].Id);
+    public static void testBulkOnBeforeUpdateOpportunityStageBecomesClosedWonThenCloseDateToday(){
+        List<Opportunity> opportunityList = TestDataFactory.insertOpportunity(10);
+        Set<Id> oppIdSet = new Set<Id>();
+        for(Integer i=0; i<10; i++){
+        	opportunityList[i].stageName='Closed Won';
+            oppIdSet.add(opportunityList[i].Id);
         }
         Test.startTest();
-        	update opp;
+        	update opportunityList;
         Test.stopTest();
-               List<Opportunity> op=[SELECT Id,CloseDate FROM Opportunity WHERE Id=:oppId];
-        for(Opportunity o:op){
-        	System.assertEquals(Date.today(), o.closeDate); 
+               List<Opportunity> opportunityQueried=[SELECT Id,CloseDate FROM Opportunity WHERE Id=:oppIdSet];
+        for(Opportunity opp : opportunityQueried){
+        	System.assertEquals(Date.today(), opp.CloseDate); 
         }
-
-        
     }
 
     @isTest
-    public static void testOnBeforeUpdateNegative(){
-        List<Opportunity> opp=TestDataFactory.insertOpportunity(100);
-        List<Id> oppId=new List<Id>();
-       	for(Integer i=0;i<100;i++){
-        	opp[i].stageName='Qualification';
-            oppId.add(opp[i].Id);
+    public static void testOnBeforeUpdateOpportunityStageBecomesOtherThenCloseDateNotToday(){
+        List<Opportunity> opportunityList = TestDataFactory.insertOpportunity(10);
+        Set<Id> oppIdSet = new Set<Id>();
+       	for(Integer i=0;i<10;i++){
+        	opportunityList[i].stageName='Qualification';
+            oppIdSet.add(opportunityList[i].Id);
         }
         Test.startTest();
-        	update opp;
+        	update opportunityList;
         Test.stopTest();
-        List<Opportunity> op=[SELECT Id,CloseDate FROM Opportunity WHERE Id=:oppId];
-        for(Opportunity o:op){
-        	System.assertNotEquals(Date.today(), o.closeDate); 
+        List<Opportunity> opportunityQueried=[SELECT Id,CloseDate FROM Opportunity WHERE Id=:oppIdSet];
+        for(Opportunity opp : opportunityQueried){
+        	System.assertNotEquals(Date.today(), opp.closeDate); 
         }
-        
     }
-
 }
